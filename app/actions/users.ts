@@ -1,17 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient as createServerClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Role, Status } from "@/lib/types";
-
-function adminClient() {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
 
 async function assertAdmin() {
   const supabase = await createClient();
@@ -33,7 +25,7 @@ export interface CreateUserInput {
 export async function createUser(input: CreateUserInput) {
   if (!(await assertAdmin())) return { error: "Apenas administradores podem criar usuários." };
 
-  const admin = adminClient();
+  const admin = createAdminClient();
   const { data, error } = await admin.auth.admin.createUser({
     email: input.email,
     password: input.password,
