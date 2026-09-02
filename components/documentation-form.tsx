@@ -5,8 +5,14 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
-import { createDocumentation, updateDocumentation, type DocumentationInput } from "@/app/actions/documentations";
+import {
+  createDocumentation,
+  updateDocumentation,
+  type DocumentationImageInput,
+  type DocumentationInput,
+} from "@/app/actions/documentations";
 import { TagInput } from "@/components/tag-input";
+import { ImageUpload } from "@/components/image-upload";
 import type { Category, Documentation } from "@/lib/types";
 
 export function DocumentationForm({
@@ -26,6 +32,9 @@ export function DocumentationForm({
   const [solution, setSolution] = useState(documentation?.solution ?? "");
   const [observations, setObservations] = useState(documentation?.observations ?? "");
   const [tags, setTags] = useState<string[]>(documentation?.tags?.map((t) => t.name) ?? []);
+  const [images, setImages] = useState<DocumentationImageInput[]>(
+    documentation?.images?.map((img) => ({ url: img.url, path: img.path })) ?? []
+  );
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -40,6 +49,7 @@ export function DocumentationForm({
       solution,
       observations,
       tags,
+      images,
     };
 
     const result = isEditing
@@ -135,6 +145,10 @@ export function DocumentationForm({
 
       <Field label="Tags">
         <TagInput value={tags} onChange={setTags} />
+      </Field>
+
+      <Field label="Prints" optional>
+        <ImageUpload value={images} onChange={setImages} />
       </Field>
 
       <div className="flex justify-end gap-3 pt-2">

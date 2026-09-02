@@ -47,7 +47,8 @@ const DOC_SELECT = `
   id, title, category_id, problem, identification, solution, observations, author_id, created_at, updated_at,
   category:categories(id, name, created_at),
   author:profiles(id, name, email, avatar_url, role, status, created_at, updated_at, last_login),
-  documentation_tags(tags(id, name, created_at))
+  documentation_tags(tags(id, name, created_at)),
+  documentation_images(id, documentation_id, url, path, created_at)
 `;
 
 function normalizeDoc(row: Record<string, unknown>): Documentation {
@@ -55,6 +56,7 @@ function normalizeDoc(row: Record<string, unknown>): Documentation {
   return {
     ...(row as unknown as Documentation),
     tags: rawTags.map((t) => t.tags) as Documentation["tags"],
+    images: (row.documentation_images as Documentation["images"]) ?? [],
   };
 }
 

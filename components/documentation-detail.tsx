@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -109,6 +110,25 @@ export function DocumentationDetail({ doc, canManage }: { doc: Documentation; ca
         </div>
 
         {doc.observations && <Section title="Observações">{doc.observations}</Section>}
+
+        {doc.images && doc.images.length > 0 && (
+          <div className="mt-8 border-t border-(--color-border) pt-6">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--color-text-muted)">Prints</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {doc.images.map((img) => (
+                <a
+                  key={img.id}
+                  href={img.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative block aspect-video overflow-hidden rounded-lg border border-(--color-border) transition-opacity hover:opacity-90"
+                >
+                  <Image src={img.url} alt="Print da documentação" fill sizes="(max-width: 640px) 50vw, 33vw" className="object-cover" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {doc.tags && doc.tags.length > 0 && (
           <div className="mt-8 border-t border-(--color-border) pt-6">

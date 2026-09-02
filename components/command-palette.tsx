@@ -42,13 +42,14 @@ export function CommandPalette() {
   }, [open]);
 
   useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
+    const trimmed = query.trim();
+    if (!trimmed) {
+      const timeout = setTimeout(() => setResults([]), 0);
+      return () => clearTimeout(timeout);
     }
     setLoading(true);
     const timeout = setTimeout(async () => {
-      const data = await searchAction(query);
+      const data = await searchAction(trimmed);
       setResults(data);
       setLoading(false);
     }, 220);

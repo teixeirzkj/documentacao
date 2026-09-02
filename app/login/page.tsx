@@ -3,8 +3,9 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { BookOpenCheck, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { Logo } from "@/components/logo";
 
 export default function LoginPage() {
   return (
@@ -53,10 +54,9 @@ function LoginForm() {
         className="w-full max-w-sm rounded-2xl border border-(--color-border) bg-(--color-surface) p-8 shadow-xl shadow-black/5"
       >
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-(--color-primary-soft) text-(--color-primary)">
-            <BookOpenCheck size={24} />
+          <div className="mb-3">
+            <Logo size="lg" />
           </div>
-          <h1 className="text-lg font-semibold text-(--color-text)">Documentação Fredy</h1>
           <p className="mt-1 text-sm text-(--color-text-muted)">
             Central interna de conhecimento da equipe.
           </p>

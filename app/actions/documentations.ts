@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
+export interface DocumentationImageInput {
+  url: string;
+  path: string;
+}
+
 export interface DocumentationInput {
   title: string;
   categoryId: string | null;
@@ -11,6 +16,19 @@ export interface DocumentationInput {
   solution: string;
   observations: string;
   tags: string[];
+  images: DocumentationImageInput[];
+}
+
+async function syncImages(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  documentationId: string,
+  images: DocumentationImageInput[]
+) {
+  await supabase.from("documentation_images").delete().eq("documentation_id", documentationId);
+  if (images.length === 0) return;
+  await supabase
+    .from("documentation_images")
+    .insert(images.map((img) => ({ documentation_id: documentationId, url: img.url, path: img.path })));
 }
 
 async function upsertTags(
@@ -63,6 +81,7 @@ export async function createDocumentation(input: DocumentationInput) {
   if (tagIds.length > 0) {
     await supabase.from("documentation_tags").insert(tagIds.map((tag_id) => ({ documentation_id: doc.id, tag_id })));
   }
+  await syncImages(supabase, doc.id, input.images);
 
   revalidatePath("/");
   revalidatePath("/documentacoes");
@@ -95,6 +114,7 @@ export async function updateDocumentation(id: string, input: DocumentationInput)
   if (tagIds.length > 0) {
     await supabase.from("documentation_tags").insert(tagIds.map((tag_id) => ({ documentation_id: id, tag_id })));
   }
+  await syncImages(supabase, id, input.images);
 
   revalidatePath("/");
   revalidatePath("/documentacoes");

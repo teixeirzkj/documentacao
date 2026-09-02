@@ -3,20 +3,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  BookOpenCheck,
-  Home,
-  Library,
-  LogOut,
-  Menu,
-  PlusCircle,
-  Settings,
-  Users,
-  X,
-} from "lucide-react";
+import { Home, Library, LogOut, Menu, PlusCircle, Settings, Users, X } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn, initials } from "@/lib/utils";
+import { Logo } from "@/components/logo";
 import type { Profile } from "@/lib/types";
 
 const NAV_ITEMS = [
@@ -43,11 +34,8 @@ export function Sidebar({ profile }: { profile: Profile }) {
 
   const content = (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 px-5 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-(--color-primary-soft) text-(--color-primary)">
-          <BookOpenCheck size={18} />
-        </div>
-        <span className="text-sm font-semibold text-(--color-text)">Documentação Fredy</span>
+      <div className="flex items-center gap-2 px-5 py-6">
+        <Logo size="sm" />
       </div>
 
       <nav className="flex-1 space-y-1 px-3">
