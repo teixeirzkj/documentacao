@@ -1,8 +1,13 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Documentation, Profile } from "@/lib/types";
 
-export async function getCurrentProfile(): Promise<Profile | null> {
+// cache() dedupes this across every Server Component that calls it during the
+// same request (layout + page both need it) — without it each call is a
+// separate round trip to Supabase Auth, which is the main source of
+// navigation lag.
+export const getCurrentProfile = cache(async (): Promise<Profile | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -11,7 +16,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
 
   const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   return (data as Profile) ?? null;
-}
+});
 
 export async function getCategories() {
   const supabase = await createClient();

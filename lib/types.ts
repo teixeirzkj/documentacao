@@ -25,6 +25,14 @@ export interface Tag {
   created_at: string;
 }
 
+export interface DocumentationImage {
+  id: string;
+  documentation_id: string;
+  url: string;
+  path: string;
+  created_at: string;
+}
+
 export interface Documentation {
   id: string;
   title: string;
@@ -40,4 +48,5 @@ export interface Documentation {
   category?: Category | null;
   author?: Profile | null;
   tags?: Tag[];
+  images?: DocumentationImage[];
 }
