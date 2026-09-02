@@ -7,25 +7,31 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // "Integração n8n" profile (id in N8N_AUTOMATION_AUTHOR_ID) so they're
 // clearly distinguishable from human-authored ones in the UI.
 //
-// Expected body:
+// Expected body — either the raw annotation as-is:
 // {
-//   "title": "Erro ao emitir reserva após pagamento",
-//   "category": "Reserva",              // optional, matches an existing category name (case-insensitive); falls back to "Outros"
-//   "problem": "...",                   // required — o que aconteceu
-//   "identification": "...",            // required — como foi identificado
-//   "solution": "...",                  // required — como foi resolvido
-//   "observations": "...",              // optional
-//   "tags": ["reserva", "pagamento"]    // optional
+//   "content": "texto bruto da anotação do card",   // required if problem/identification/solution aren't sent
+//   "title": "...",                                  // optional, derived from `content` when omitted
+//   "category": "Reserva",                            // optional, matches an existing category name (case-insensitive); falls back to "Outros"
+//   "observations": "...",                            // optional
+//   "tags": ["reserva", "pagamento"]                  // optional
 // }
+// ...or already-structured fields, if the caller prefers to split them itself:
+// { "title": "...", "problem": "...", "identification": "...", "solution": "...", "category": "...", "observations": "...", "tags": [...] }
 
 interface Payload {
   title?: string;
+  content?: string;
   category?: string;
   problem?: string;
   identification?: string;
   solution?: string;
   observations?: string;
   tags?: string[];
+}
+
+function deriveTitle(content: string): string {
+  const firstLine = content.split("\n").find((line) => line.trim().length > 0) ?? content;
+  return firstLine.trim().slice(0, 120);
 }
 
 async function resolveCategoryId(
@@ -83,12 +89,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Corpo da requisição inválido (esperado JSON)." }, { status: 400 });
   }
 
-  const { title, problem, identification, solution } = body;
-  if (!title || !problem || !identification || !solution) {
+  const hasStructuredFields = body.problem && body.identification && body.solution;
+  const content = body.content?.trim();
+
+  if (!hasStructuredFields && !content) {
     return NextResponse.json(
-      { error: "Campos obrigatórios: title, problem, identification, solution." },
+      { error: "Envie 'content' com o texto da anotação, ou os campos problem, identification e solution." },
       { status: 400 }
     );
+  }
+
+  const title = body.title?.trim() || (content ? deriveTitle(content) : "");
+  const problem = body.problem || content!;
+  const identification = body.identification || "Não informado — documentação gerada automaticamente a partir de uma anotação.";
+  const solution = body.solution || content!;
+
+  if (!title) {
+    return NextResponse.json({ error: "Não foi possível determinar um título." }, { status: 400 });
   }
 
   const supabase = createAdminClient();
