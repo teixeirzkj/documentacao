@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Documentação Fredy
 
-## Getting Started
+Central interna de conhecimento da equipe de atendimento. Registre problemas já solucionados e encontre-os rapidamente através de uma busca inteligente.
 
-First, run the development server:
+Stack: Next.js (App Router) · TypeScript · Tailwind CSS v4 · Framer Motion · Supabase (Auth + Postgres + RLS).
+
+## 1. Configurar o Supabase
+
+1. Crie um projeto em [supabase.com](https://supabase.com).
+2. No **SQL Editor**, rode o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) por inteiro. Ele cria as tabelas, os índices de busca (Full Text Search em português + trigram), as políticas de RLS e as categorias padrão.
+3. Em **Authentication → Providers**, deixe apenas E-mail/Senha ativado (sem confirmação por e-mail, já que os usuários são criados pelo administrador).
+4. Em **Project Settings → API**, copie a `Project URL`, a `anon public key` e a `service_role key`.
+
+## 2. Variáveis de ambiente
+
+Copie `.env.local.example` para `.env.local` e preencha:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...   # usada apenas em server actions, nunca exposta ao client
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 3. Criar o primeiro administrador
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Rode o projeto (`npm run dev`) e crie sua própria conta pela [tela de criação de usuário do Supabase](https://supabase.com/dashboard) (Authentication → Users → Add user), ou peça para outro admin te criar depois.
+2. Como ainda não existe nenhum admin, promova seu usuário manualmente no SQL Editor:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```sql
+   update public.profiles set role = 'administrador' where email = 'seu-email@empresa.com';
+   ```
 
-## Learn More
+3. A partir daí, você pode criar os demais usuários pela própria interface em **Usuários → Adicionar usuário**.
 
-To learn more about Next.js, take a look at the following resources:
+## 4. Rodar localmente
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Abra [http://localhost:3000](http://localhost:3000) — você será redirecionado para `/login`.
 
-## Deploy on Vercel
+## Estrutura
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `app/(app)` — páginas protegidas (dashboard, documentações, usuários, configurações), atrás do `middleware.ts` que valida a sessão Supabase.
+- `app/login` — tela de autenticação.
+- `app/actions` — Server Actions (mutações: criar/editar/excluir documentação, criar/gerenciar usuários).
+- `lib/data.ts` — leituras server-side (dashboard, busca, listagens).
+- `lib/supabase` — clients Supabase (browser, server, middleware).
+- `supabase/schema.sql` — schema completo, incluindo Full Text Search com ranking de relevância e as políticas de RLS.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Busca
+
+A pesquisa (`Ctrl K` em qualquer página, ou a barra central do dashboard/`/documentacoes`) usa a função `search_documentations` no Postgres, que combina `tsvector` em português (com pesos por campo: título > categoria/tags > problema/identificação/solução > observações) com `unaccent` para tolerar acentuação e ranking por relevância.
