@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteDocumentation } from "@/app/actions/documentations";
-import { formatDate } from "@/lib/utils";
+import { classificationLabel, classificationStyle, formatDate } from "@/lib/utils";
 import type { Documentation, Profile } from "@/lib/types";
 
 export function DocumentationDetail({ doc, canManage }: { doc: Documentation; canManage: boolean }) {
@@ -76,11 +76,16 @@ export function DocumentationDetail({ doc, canManage }: { doc: Documentation; ca
       </div>
 
       <div className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-6 sm:p-8">
-        {doc.category && (
-          <span className="mb-3 inline-block rounded-full bg-(--color-primary-soft) px-2.5 py-0.5 text-xs font-medium text-(--color-primary)">
-            {doc.category.name}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {doc.category && (
+            <span className="inline-block rounded-full bg-(--color-primary-soft) px-2.5 py-0.5 text-xs font-medium text-(--color-primary)">
+              {doc.category.name}
+            </span>
+          )}
+          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${classificationStyle(doc.classification)}`}>
+            {classificationLabel(doc.classification)}
           </span>
-        )}
+        </div>
 
         <h1 className="text-2xl font-semibold text-(--color-text)">{doc.title}</h1>
         <p className="mt-2 text-sm text-(--color-text-muted)">
@@ -89,7 +94,7 @@ export function DocumentationDetail({ doc, canManage }: { doc: Documentation; ca
         </p>
 
         <Section title="Problema">{doc.problem}</Section>
-        <Section title="Como foi identificado">{doc.identification}</Section>
+        {doc.identification && <Section title="Como foi identificado">{doc.identification}</Section>}
 
         <div className="mt-8 border-t border-(--color-border) pt-6">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-(--color-text-muted)">Solução</h2>

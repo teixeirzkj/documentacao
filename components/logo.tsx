@@ -1,10 +1,20 @@
+import Image from "next/image";
+
 const SIZES = {
-  sm: { text: "text-lg", mic: 11, gap: "-mb-4" },
-  lg: { text: "text-3xl", mic: 16, gap: "-mb-6" },
+  sm: { text: "text-lg", mic: 11, gap: "-mb-4", px: 32 },
+  lg: { text: "text-3xl", mic: 16, gap: "-mb-6", px: 56 },
 } as const;
 
-export function Logo({ size = "sm" }: { size?: keyof typeof SIZES }) {
-  const { text, mic, gap } = SIZES[size];
+export function Logo({ size = "sm", logoUrl }: { size?: keyof typeof SIZES; logoUrl?: string | null }) {
+  const { text, mic, gap, px } = SIZES[size];
+
+  if (logoUrl) {
+    return (
+      <span className="inline-flex items-center" style={{ height: px }}>
+        <Image src={logoUrl} alt="Logo" width={px * 3} height={px} className="h-full w-auto object-contain" />
+      </span>
+    );
+  }
 
   return (
     <span className={`inline-flex items-baseline font-extrabold tracking-tight ${text}`}>

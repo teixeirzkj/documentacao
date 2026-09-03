@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import type { Documentation, Profile } from "@/lib/types";
+import type { AppSettings, Classification, Documentation, Profile } from "@/lib/types";
 
 // cache() dedupes this across every Server Component that calls it during the
 // same request (layout + page both need it) — without it each call is a
@@ -30,6 +30,18 @@ export async function getCategories() {
   return data ?? [];
 }
 
+export async function getTags() {
+  const supabase = await createClient();
+  const { data } = await supabase.from("tags").select("*").order("name");
+  return data ?? [];
+}
+
+export async function getAppSettings(): Promise<AppSettings> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("app_settings").select("logo_url, logo_path").eq("id", true).single();
+  return { logo_url: data?.logo_url ?? null, logo_path: data?.logo_path ?? null };
+}
+
 export async function getStats(userId: string) {
   const supabase = await createClient();
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -50,7 +62,7 @@ export async function getStats(userId: string) {
 }
 
 const DOC_SELECT = `
-  id, title, category_id, problem, identification, solution, observations, author_id, created_at, updated_at,
+  id, title, category_id, problem, identification, solution, observations, classification, author_id, created_at, updated_at,
   category:categories(id, name, created_at),
   author:profiles(id, name, email, avatar_url, role, status, created_at, updated_at, last_login),
   documentation_tags(tags(id, name, created_at)),
@@ -87,11 +99,22 @@ export interface DocFilters {
   query?: string;
   categoryId?: string;
   authorId?: string;
+  classification?: Classification;
+  tagId?: string;
   dateFrom?: string;
+  dateTo?: string;
+}
+
+async function docIdsForTag(supabase: Awaited<ReturnType<typeof createClient>>, tagId: string): Promise<string[]> {
+  const { data } = await supabase.from("documentation_tags").select("documentation_id").eq("tag_id", tagId);
+  return (data ?? []).map((r) => r.documentation_id as string);
 }
 
 export async function searchDocumentations(filters: DocFilters): Promise<Documentation[]> {
   const supabase = await createClient();
+
+  const tagDocIds = filters.tagId ? await docIdsForTag(supabase, filters.tagId) : null;
+  if (tagDocIds && tagDocIds.length === 0) return [];
 
   if (filters.query && filters.query.trim().length > 0) {
     const { data, error } = await supabase.rpc("search_documentations", { query: filters.query });
@@ -100,7 +123,10 @@ export async function searchDocumentations(filters: DocFilters): Promise<Documen
     let rows = data as Documentation[];
     if (filters.categoryId) rows = rows.filter((d) => d.category_id === filters.categoryId);
     if (filters.authorId) rows = rows.filter((d) => d.author_id === filters.authorId);
+    if (filters.classification) rows = rows.filter((d) => d.classification === filters.classification);
     if (filters.dateFrom) rows = rows.filter((d) => d.created_at >= filters.dateFrom!);
+    if (filters.dateTo) rows = rows.filter((d) => d.created_at <= filters.dateTo!);
+    if (tagDocIds) rows = rows.filter((d) => tagDocIds.includes(d.id));
 
     const ids = rows.map((d) => d.id);
     if (ids.length === 0) return [];
@@ -113,7 +139,10 @@ export async function searchDocumentations(filters: DocFilters): Promise<Documen
   let q = supabase.from("documentations").select(DOC_SELECT).order("created_at", { ascending: false });
   if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
   if (filters.authorId) q = q.eq("author_id", filters.authorId);
+  if (filters.classification) q = q.eq("classification", filters.classification);
   if (filters.dateFrom) q = q.gte("created_at", filters.dateFrom);
+  if (filters.dateTo) q = q.lte("created_at", filters.dateTo);
+  if (tagDocIds) q = q.in("id", tagDocIds);
 
   const { data } = await q;
   return ((data as unknown as Record<string, unknown>[]) ?? []).map(normalizeDoc);

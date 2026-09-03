@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { Classification } from "@/lib/types";
 
 export interface DocumentationImageInput {
   url: string;
@@ -12,11 +13,20 @@ export interface DocumentationInput {
   title: string;
   categoryId: string | null;
   problem: string;
-  identification: string;
   solution: string;
   observations: string;
+  classification: Classification | "";
   tags: string[];
   images: DocumentationImageInput[];
+}
+
+function validateInput(input: DocumentationInput): string | null {
+  if (!input.title.trim()) return "Preencha o título.";
+  if (!input.categoryId) return "Selecione uma categoria.";
+  if (!input.problem.trim()) return "Descreva o problema.";
+  if (!input.solution.trim()) return "Descreva a solução.";
+  if (!input.classification) return "Selecione uma classificação.";
+  return null;
 }
 
 async function syncImages(
@@ -55,6 +65,9 @@ async function upsertTags(
 }
 
 export async function createDocumentation(input: DocumentationInput) {
+  const validationError = validateInput(input);
+  if (validationError) return { error: validationError };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -67,9 +80,9 @@ export async function createDocumentation(input: DocumentationInput) {
       title: input.title,
       category_id: input.categoryId,
       problem: input.problem,
-      identification: input.identification,
       solution: input.solution,
       observations: input.observations || null,
+      classification: input.classification,
       author_id: user.id,
     })
     .select("id")
@@ -89,6 +102,9 @@ export async function createDocumentation(input: DocumentationInput) {
 }
 
 export async function updateDocumentation(id: string, input: DocumentationInput) {
+  const validationError = validateInput(input);
+  if (validationError) return { error: validationError };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -101,9 +117,9 @@ export async function updateDocumentation(id: string, input: DocumentationInput)
       title: input.title,
       category_id: input.categoryId,
       problem: input.problem,
-      identification: input.identification,
       solution: input.solution,
       observations: input.observations || null,
+      classification: input.classification,
     })
     .eq("id", id);
 

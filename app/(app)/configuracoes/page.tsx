@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentProfile } from "@/lib/data";
+import { getAppSettings, getCurrentProfile } from "@/lib/data";
 import { SettingsView } from "@/components/settings-view";
 
 export default async function ConfiguracoesPage() {
@@ -7,5 +7,6 @@ export default async function ConfiguracoesPage() {
   if (!profile) redirect("/login");
   if (profile.role !== "administrador") redirect("/");
 
-  return <SettingsView profile={profile} />;
+  const appSettings = await getAppSettings();
+  return <SettingsView profile={profile} appSettings={appSettings} />;
 }

@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { PlusCircle, SearchX } from "lucide-react";
-import { getCategories, getUsers, searchDocumentations } from "@/lib/data";
+import { getCategories, getTags, getUsers, searchDocumentations } from "@/lib/data";
 import { SearchInput } from "@/components/search-input";
 import { DocumentationFilters } from "@/components/documentation-filters";
 import { DocumentationCard } from "@/components/documentation-card";
-import { daysAgoISO } from "@/lib/utils";
+import type { Classification } from "@/lib/types";
 
 export default async function DocumentacoesPage({
   searchParams,
@@ -14,16 +14,21 @@ export default async function DocumentacoesPage({
   const params = await searchParams;
   const query = params.q ?? "";
 
-  const dateFrom = params.periodo ? daysAgoISO(Number(params.periodo)) : undefined;
+  const dateFrom = params.de ? new Date(`${params.de}T00:00:00.000Z`).toISOString() : undefined;
+  const dateTo = params.ate ? new Date(`${params.ate}T23:59:59.999Z`).toISOString() : undefined;
 
-  const [categories, authors, docs] = await Promise.all([
+  const [categories, authors, tags, docs] = await Promise.all([
     getCategories(),
     getUsers(),
+    getTags(),
     searchDocumentations({
       query,
       categoryId: params.categoria,
       authorId: params.autor,
+      classification: params.classificacao as Classification | undefined,
+      tagId: params.etiqueta,
       dateFrom,
+      dateTo,
     }),
   ]);
 
@@ -45,7 +50,7 @@ export default async function DocumentacoesPage({
       </div>
 
       <div className="mb-6">
-        <DocumentationFilters categories={categories} authors={authors} />
+        <DocumentationFilters categories={categories} authors={authors} tags={tags} />
       </div>
 
       {query && (

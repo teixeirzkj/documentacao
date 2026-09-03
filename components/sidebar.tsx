@@ -18,7 +18,7 @@ const NAV_ITEMS = [
   { href: "/configuracoes", label: "Configurações", icon: Settings, adminOnly: true },
 ];
 
-export function Sidebar({ profile }: { profile: Profile }) {
+export function Sidebar({ profile, logoUrl }: { profile: Profile; logoUrl?: string | null }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -35,7 +35,7 @@ export function Sidebar({ profile }: { profile: Profile }) {
   const content = (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 px-5 py-6">
-        <Logo size="sm" />
+        <Logo size="sm" logoUrl={logoUrl} />
       </div>
 
       <nav className="flex-1 space-y-1 px-3">

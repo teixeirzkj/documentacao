@@ -13,7 +13,8 @@ import {
 } from "@/app/actions/documentations";
 import { TagInput } from "@/components/tag-input";
 import { ImageUpload } from "@/components/image-upload";
-import type { Category, Documentation } from "@/lib/types";
+import { CLASSIFICATION_OPTIONS } from "@/lib/utils";
+import type { Category, Classification, Documentation } from "@/lib/types";
 
 export function DocumentationForm({
   categories,
@@ -26,11 +27,11 @@ export function DocumentationForm({
   const isEditing = Boolean(documentation);
 
   const [title, setTitle] = useState(documentation?.title ?? "");
-  const [categoryId, setCategoryId] = useState(documentation?.category_id ?? categories[0]?.id ?? "");
+  const [categoryId, setCategoryId] = useState(documentation?.category_id ?? "");
   const [problem, setProblem] = useState(documentation?.problem ?? "");
-  const [identification, setIdentification] = useState(documentation?.identification ?? "");
   const [solution, setSolution] = useState(documentation?.solution ?? "");
   const [observations, setObservations] = useState(documentation?.observations ?? "");
+  const [classification, setClassification] = useState<Classification | "">(documentation?.classification ?? "");
   const [tags, setTags] = useState<string[]>(documentation?.tags?.map((t) => t.name) ?? []);
   const [images, setImages] = useState<DocumentationImageInput[]>(
     documentation?.images?.map((img) => ({ url: img.url, path: img.path })) ?? []
@@ -39,15 +40,21 @@ export function DocumentationForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!title.trim() || !categoryId || !problem.trim() || !solution.trim() || !classification) {
+      toast.error("Preencha todos os campos obrigatórios antes de salvar.");
+      return;
+    }
+
     setLoading(true);
 
     const input: DocumentationInput = {
       title,
       categoryId: categoryId || null,
       problem,
-      identification,
       solution,
       observations,
+      classification,
       tags,
       images,
     };
@@ -88,10 +95,14 @@ export function DocumentationForm({
 
       <Field label="Categoria">
         <select
+          required
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
           className="w-full rounded-lg border border-(--color-border) bg-(--color-bg) px-3.5 py-2.5 text-sm text-(--color-text) outline-none focus:ring-2 focus:ring-(--color-ring)"
         >
+          <option value="" disabled>
+            Selecione uma categoria
+          </option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -111,15 +122,22 @@ export function DocumentationForm({
         />
       </Field>
 
-      <Field label="Como você identificou o problema?">
-        <textarea
+      <Field label="Classificação">
+        <select
           required
-          rows={3}
-          value={identification}
-          onChange={(e) => setIdentification(e.target.value)}
-          placeholder="Explique como a causa foi identificada..."
-          className="w-full resize-y rounded-lg border border-(--color-border) bg-(--color-bg) px-3.5 py-2.5 text-sm text-(--color-text) outline-none focus:ring-2 focus:ring-(--color-ring)"
-        />
+          value={classification}
+          onChange={(e) => setClassification(e.target.value as Classification)}
+          className="w-full rounded-lg border border-(--color-border) bg-(--color-bg) px-3.5 py-2.5 text-sm text-(--color-text) outline-none focus:ring-2 focus:ring-(--color-ring)"
+        >
+          <option value="" disabled>
+            Selecione a classificação
+          </option>
+          {CLASSIFICATION_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
       </Field>
 
       <Field label="Como foi solucionado?">

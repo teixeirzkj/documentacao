@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, User } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { classificationLabel, classificationStyle, formatDate } from "@/lib/utils";
 import type { Documentation } from "@/lib/types";
 
 export function DocumentationCard({ doc, index = 0 }: { doc: Documentation; index?: number }) {
@@ -24,11 +24,16 @@ export function DocumentationCard({ doc, index = 0 }: { doc: Documentation; inde
           </h3>
         </div>
 
-        {doc.category && (
-          <span className="mb-2 inline-block w-fit rounded-full bg-(--color-primary-soft) px-2.5 py-0.5 text-[11px] font-medium text-(--color-primary)">
-            {doc.category.name}
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          {doc.category && (
+            <span className="inline-block w-fit rounded-full bg-(--color-primary-soft) px-2.5 py-0.5 text-[11px] font-medium text-(--color-primary)">
+              {doc.category.name}
+            </span>
+          )}
+          <span className={`inline-block w-fit rounded-full px-2.5 py-0.5 text-[11px] font-medium ${classificationStyle(doc.classification)}`}>
+            {classificationLabel(doc.classification)}
           </span>
-        )}
+        </div>
 
         <p className="mb-3 line-clamp-2 flex-1 text-sm text-(--color-text-muted)">{doc.problem}</p>
 

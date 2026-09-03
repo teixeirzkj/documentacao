@@ -1,5 +1,6 @@
 export type Role = "administrador" | "atendente";
 export type Status = "ativo" | "inativo";
+export type Classification = "basico" | "medio" | "avancado";
 
 export interface Profile {
   id: string;
@@ -38,9 +39,10 @@ export interface Documentation {
   title: string;
   category_id: string | null;
   problem: string;
-  identification: string;
+  identification: string | null;
   solution: string;
   observations: string | null;
+  classification: Classification;
   author_id: string;
   created_at: string;
   updated_at: string;
@@ -49,4 +51,9 @@ export interface Documentation {
   author?: Profile | null;
   tags?: Tag[];
   images?: DocumentationImage[];
+}
+
+export interface AppSettings {
+  logo_url: string | null;
+  logo_path: string | null;
 }

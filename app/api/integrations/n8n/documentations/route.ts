@@ -9,19 +9,23 @@ import { createAdminClient } from "@/lib/supabase/admin";
 //
 // Expected body — either the raw annotation as-is:
 // {
-//   "content": "texto bruto da anotação do card",   // required if problem/identification/solution aren't sent
+//   "content": "texto bruto da anotação do card",   // required if problem/solution aren't sent
 //   "title": "...",                                  // optional, derived from `content` when omitted
 //   "category": "Reserva",                            // optional, matches an existing category name (case-insensitive); falls back to "Outros"
+//   "classification": "basico",                       // optional, one of basico|medio|avancado; defaults to "basico"
 //   "observations": "...",                            // optional
 //   "tags": ["reserva", "pagamento"]                  // optional
 // }
 // ...or already-structured fields, if the caller prefers to split them itself:
-// { "title": "...", "problem": "...", "identification": "...", "solution": "...", "category": "...", "observations": "...", "tags": [...] }
+// { "title": "...", "problem": "...", "solution": "...", "category": "...", "classification": "...", "observations": "...", "tags": [...] }
+
+const CLASSIFICATIONS = ["basico", "medio", "avancado"];
 
 interface Payload {
   title?: string;
   content?: string;
   category?: string;
+  classification?: string;
   problem?: string;
   identification?: string;
   solution?: string;
@@ -89,19 +93,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Corpo da requisição inválido (esperado JSON)." }, { status: 400 });
   }
 
-  const hasStructuredFields = body.problem && body.identification && body.solution;
+  const hasStructuredFields = body.problem && body.solution;
   const content = body.content?.trim();
 
   if (!hasStructuredFields && !content) {
     return NextResponse.json(
-      { error: "Envie 'content' com o texto da anotação, ou os campos problem, identification e solution." },
+      { error: "Envie 'content' com o texto da anotação, ou os campos problem e solution." },
       { status: 400 }
     );
   }
 
   const title = body.title?.trim() || (content ? deriveTitle(content) : "");
   const problem = body.problem || content!;
-  const identification = body.identification || "Não informado — documentação gerada automaticamente a partir de uma anotação.";
+  const identification = body.identification || null;
   const solution = body.solution || content!;
 
   if (!title) {
@@ -110,6 +114,7 @@ export async function POST(request: Request) {
 
   const supabase = createAdminClient();
   const categoryId = await resolveCategoryId(supabase, body.category);
+  const classification = CLASSIFICATIONS.includes(body.classification ?? "") ? body.classification : "basico";
 
   const { data: doc, error } = await supabase
     .from("documentations")
@@ -120,6 +125,7 @@ export async function POST(request: Request) {
       identification,
       solution,
       observations: body.observations || null,
+      classification,
       author_id: authorId,
     })
     .select("id")

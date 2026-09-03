@@ -8,7 +8,8 @@ import { useTheme } from "@/components/theme-provider";
 import { updateOwnProfile } from "@/app/actions/users";
 import { createClient } from "@/lib/supabase/client";
 import { initials, roleLabel } from "@/lib/utils";
-import type { Profile } from "@/lib/types";
+import { LogoUpload } from "@/components/logo-upload";
+import type { AppSettings, Profile } from "@/lib/types";
 
 const APPEARANCE_OPTIONS = [
   { value: "light", label: "Claro", icon: Sun },
@@ -16,7 +17,7 @@ const APPEARANCE_OPTIONS = [
   { value: "system", label: "Sistema", icon: Monitor },
 ] as const;
 
-export function SettingsView({ profile }: { profile: Profile }) {
+export function SettingsView({ profile, appSettings }: { profile: Profile; appSettings: AppSettings }) {
   const { theme, setTheme } = useTheme();
   const [name, setName] = useState(profile.name);
   const [savingName, setSavingName] = useState(false);
@@ -133,6 +134,13 @@ export function SettingsView({ profile }: { profile: Profile }) {
           </button>
         </form>
       </section>
+
+      {profile.role === "administrador" && (
+        <section className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-6">
+          <h2 className="mb-4 text-sm font-semibold text-(--color-text)">Logo da marca</h2>
+          <LogoUpload logoUrl={appSettings.logo_url} logoPath={appSettings.logo_path} />
+        </section>
+      )}
 
       {profile.role === "administrador" && (
         <section className="rounded-2xl border border-(--color-border) bg-(--color-surface) p-6">
