@@ -19,6 +19,10 @@ create index if not exists idx_documentations_classification on public.documenta
 
 -- Recria a função de busca incluindo a classificação, para que o filtro por
 -- classificação funcione também no fluxo de pesquisa por texto.
+-- Precisa dropar antes: o tipo de retorno (colunas) mudou, e o Postgres não
+-- permite `create or replace` trocar as colunas de saída de uma função.
+drop function if exists public.search_documentations(text);
+
 create or replace function public.search_documentations(query text)
 returns table (
   id uuid,
