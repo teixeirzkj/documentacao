@@ -12,14 +12,35 @@ import { createAdminClient } from "@/lib/supabase/admin";
 //   "content": "texto bruto da anotação do card",   // required if problem/solution aren't sent
 //   "title": "...",                                  // optional, derived from `content` when omitted
 //   "category": "Reserva",                            // optional, matches an existing category name (case-insensitive); falls back to "Outros"
-//   "classification": "basico",                       // optional, one of basico|medio|avancado; defaults to "basico"
+//   "classification": "basico",                       // optional, aceita basico|medio|avancado (com ou sem acento/caixa)
+//                                                      // e também baixo|medio|alto|critico — defaults to "basico"
 //   "observations": "...",                            // optional
 //   "tags": ["reserva", "pagamento"]                  // optional
 // }
 // ...or already-structured fields, if the caller prefers to split them itself:
 // { "title": "...", "problem": "...", "solution": "...", "category": "...", "classification": "...", "observations": "...", "tags": [...] }
 
-const CLASSIFICATIONS = ["basico", "medio", "avancado"];
+// Aceita tanto os valores nativos do site (básico/médio/avançado) quanto os
+// 4 níveis do card no n8n (baixo/médio/alto/crítico) — alto e crítico caem
+// em "avancado" já que o site só tem 3 níveis.
+const CLASSIFICATION_ALIASES: Record<string, string> = {
+  basico: "basico",
+  baixo: "basico",
+  medio: "medio",
+  alto: "avancado",
+  avancado: "avancado",
+  critico: "avancado",
+};
+
+function resolveClassification(value: string | undefined): string {
+  if (!value) return "basico";
+  const normalized = value
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim()
+    .toLowerCase();
+  return CLASSIFICATION_ALIASES[normalized] ?? "basico";
+}
 
 interface Payload {
   title?: string;
@@ -114,7 +135,7 @@ export async function POST(request: Request) {
 
   const supabase = createAdminClient();
   const categoryId = await resolveCategoryId(supabase, body.category);
-  const classification = CLASSIFICATIONS.includes(body.classification ?? "") ? body.classification : "basico";
+  const classification = resolveClassification(body.classification);
 
   const { data: doc, error } = await supabase
     .from("documentations")
