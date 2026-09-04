@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 const SIZES = {
   sm: { text: "text-lg", mic: 11, gap: "-mb-4", px: 32 },
   lg: { text: "text-3xl", mic: 16, gap: "-mb-6", px: 56 },
@@ -9,11 +7,11 @@ export function Logo({ size = "sm", logoUrl }: { size?: keyof typeof SIZES; logo
   const { text, mic, gap, px } = SIZES[size];
 
   if (logoUrl) {
-    return (
-      <span className="inline-flex items-center" style={{ height: px }}>
-        <Image src={logoUrl} alt="Logo" width={px * 3} height={px} className="h-full w-auto object-contain" />
-      </span>
-    );
+    // Plain <img> (not next/image) so the browser sizes it from the file's
+    // real aspect ratio instead of a hardcoded width/height that would
+    // distort whatever shape a future logo upload happens to have.
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={logoUrl} alt="Logo" style={{ height: px, width: "auto" }} className="object-contain" />;
   }
 
   return (
