@@ -103,6 +103,15 @@ export interface DocFilters {
   tagId?: string;
   dateFrom?: string;
   dateTo?: string;
+  /** 1-based page number. Defaults to 1. */
+  page?: number;
+  /** Results per page. Defaults to 24. */
+  pageSize?: number;
+}
+
+export interface DocSearchResult {
+  docs: Documentation[];
+  hasMore: boolean;
 }
 
 async function docIdsForTag(supabase: Awaited<ReturnType<typeof createClient>>, tagId: string): Promise<string[]> {
@@ -110,15 +119,17 @@ async function docIdsForTag(supabase: Awaited<ReturnType<typeof createClient>>, 
   return (data ?? []).map((r) => r.documentation_id as string);
 }
 
-export async function searchDocumentations(filters: DocFilters): Promise<Documentation[]> {
+export async function searchDocumentations(filters: DocFilters): Promise<DocSearchResult> {
   const supabase = await createClient();
+  const pageSize = filters.pageSize ?? 24;
+  const offset = (Math.max(1, filters.page ?? 1) - 1) * pageSize;
 
   const tagDocIds = filters.tagId ? await docIdsForTag(supabase, filters.tagId) : null;
-  if (tagDocIds && tagDocIds.length === 0) return [];
+  if (tagDocIds && tagDocIds.length === 0) return { docs: [], hasMore: false };
 
   if (filters.query && filters.query.trim().length > 0) {
     const { data, error } = await supabase.rpc("search_documentations", { query: filters.query });
-    if (error || !data) return [];
+    if (error || !data) return { docs: [], hasMore: false };
 
     let rows = data as Documentation[];
     if (filters.categoryId) rows = rows.filter((d) => d.category_id === filters.categoryId);
@@ -128,12 +139,16 @@ export async function searchDocumentations(filters: DocFilters): Promise<Documen
     if (filters.dateTo) rows = rows.filter((d) => d.created_at <= filters.dateTo!);
     if (tagDocIds) rows = rows.filter((d) => tagDocIds.includes(d.id));
 
-    const ids = rows.map((d) => d.id);
-    if (ids.length === 0) return [];
+    const page = rows.slice(offset, offset + pageSize);
+    const ids = page.map((d) => d.id);
+    if (ids.length === 0) return { docs: [], hasMore: false };
 
     const { data: full } = await supabase.from("documentations").select(DOC_SELECT).in("id", ids);
     const byId = new Map(((full as unknown as Record<string, unknown>[]) ?? []).map((d) => [d.id as string, normalizeDoc(d)]));
-    return ids.map((id) => byId.get(id)).filter(Boolean) as Documentation[];
+    return {
+      docs: ids.map((id) => byId.get(id)).filter(Boolean) as Documentation[],
+      hasMore: offset + pageSize < rows.length,
+    };
   }
 
   let q = supabase.from("documentations").select(DOC_SELECT).order("created_at", { ascending: false });
@@ -143,9 +158,14 @@ export async function searchDocumentations(filters: DocFilters): Promise<Documen
   if (filters.dateFrom) q = q.gte("created_at", filters.dateFrom);
   if (filters.dateTo) q = q.lte("created_at", filters.dateTo);
   if (tagDocIds) q = q.in("id", tagDocIds);
+  q = q.range(offset, offset + pageSize);
 
   const { data } = await q;
-  return ((data as unknown as Record<string, unknown>[]) ?? []).map(normalizeDoc);
+  const rows = (data as unknown as Record<string, unknown>[]) ?? [];
+  return {
+    docs: rows.slice(0, pageSize).map(normalizeDoc),
+    hasMore: rows.length > pageSize,
+  };
 }
 
 export async function getUsers(): Promise<Profile[]> {

@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { PlusCircle, SearchX } from "lucide-react";
+import { ChevronLeft, ChevronRight, PlusCircle, SearchX } from "lucide-react";
 import { getCategories, getTags, getUsers, searchDocumentations } from "@/lib/data";
 import { SearchInput } from "@/components/search-input";
 import { DocumentationFilters } from "@/components/documentation-filters";
 import { DocumentationCard } from "@/components/documentation-card";
 import type { Classification } from "@/lib/types";
+
+const PAGE_SIZE = 24;
 
 export default async function DocumentacoesPage({
   searchParams,
@@ -13,11 +15,12 @@ export default async function DocumentacoesPage({
 }) {
   const params = await searchParams;
   const query = params.q ?? "";
+  const page = Math.max(1, Number(params.pagina) || 1);
 
   const dateFrom = params.de ? new Date(`${params.de}T00:00:00.000Z`).toISOString() : undefined;
   const dateTo = params.ate ? new Date(`${params.ate}T23:59:59.999Z`).toISOString() : undefined;
 
-  const [categories, authors, tags, docs] = await Promise.all([
+  const [categories, authors, tags, { docs, hasMore }] = await Promise.all([
     getCategories(),
     getUsers(),
     getTags(),
@@ -29,8 +32,20 @@ export default async function DocumentacoesPage({
       tagId: params.etiqueta,
       dateFrom,
       dateTo,
+      page,
+      pageSize: PAGE_SIZE,
     }),
   ]);
+
+  const otherParams = new URLSearchParams(
+    Object.entries(params).filter(([k, v]) => k !== "pagina" && v) as [string, string][]
+  );
+  const pageHref = (p: number) => {
+    const sp = new URLSearchParams(otherParams);
+    if (p > 1) sp.set("pagina", String(p));
+    const qs = sp.toString();
+    return qs ? `/documentacoes?${qs}` : "/documentacoes";
+  };
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -55,8 +70,7 @@ export default async function DocumentacoesPage({
 
       {query && (
         <p className="mb-4 text-sm text-(--color-text-muted)">
-          {docs.length} {docs.length === 1 ? "documentação encontrada" : "documentações encontradas"} para{" "}
-          <span className="font-medium text-(--color-text)">&ldquo;{query}&rdquo;</span>
+          Resultados para <span className="font-medium text-(--color-text)">&ldquo;{query}&rdquo;</span>
         </p>
       )}
 
@@ -85,11 +99,45 @@ export default async function DocumentacoesPage({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {docs.map((doc, i) => (
-            <DocumentationCard key={doc.id} doc={doc} index={i} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {docs.map((doc, i) => (
+              <DocumentationCard key={doc.id} doc={doc} index={i} />
+            ))}
+          </div>
+
+          {(page > 1 || hasMore) && (
+            <div className="mt-6 flex items-center justify-center gap-3">
+              {page > 1 ? (
+                <Link
+                  href={pageHref(page - 1)}
+                  className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3.5 py-2 text-sm font-medium text-(--color-text) hover:bg-(--color-surface-2)"
+                >
+                  <ChevronLeft size={15} /> Anterior
+                </Link>
+              ) : (
+                <span className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium text-(--color-text-muted) opacity-50">
+                  <ChevronLeft size={15} /> Anterior
+                </span>
+              )}
+
+              <span className="text-sm text-(--color-text-muted)">Página {page}</span>
+
+              {hasMore ? (
+                <Link
+                  href={pageHref(page + 1)}
+                  className="flex items-center gap-1.5 rounded-lg border border-(--color-border) bg-(--color-surface) px-3.5 py-2 text-sm font-medium text-(--color-text) hover:bg-(--color-surface-2)"
+                >
+                  Próxima <ChevronRight size={15} />
+                </Link>
+              ) : (
+                <span className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium text-(--color-text-muted) opacity-50">
+                  Próxima <ChevronRight size={15} />
+                </span>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

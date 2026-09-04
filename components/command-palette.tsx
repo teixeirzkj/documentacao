@@ -21,6 +21,7 @@ export function CommandPalette() {
     setOpen(false);
     setQuery("");
     setResults([]);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -43,11 +44,8 @@ export function CommandPalette() {
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (!trimmed) {
-      const timeout = setTimeout(() => setResults([]), 0);
-      return () => clearTimeout(timeout);
-    }
-    setLoading(true);
+    if (!trimmed) return;
+
     const timeout = setTimeout(async () => {
       const data = await searchAction(trimmed);
       setResults(data);
@@ -59,6 +57,16 @@ export function CommandPalette() {
   function goTo(id: string) {
     close();
     router.push(`/documentacoes/${id}`);
+  }
+
+  function handleQueryChange(value: string) {
+    setQuery(value);
+    if (value.trim()) {
+      setLoading(true);
+    } else {
+      setLoading(false);
+      setResults([]);
+    }
   }
 
   return (
@@ -97,7 +105,7 @@ export function CommandPalette() {
                 <input
                   ref={inputRef}
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => handleQueryChange(e.target.value)}
                   placeholder="Pesquisar documentação..."
                   className="flex-1 bg-transparent text-sm text-(--color-text) outline-none placeholder:text-(--color-text-muted)"
                 />

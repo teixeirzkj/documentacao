@@ -23,6 +23,7 @@ export function DocumentationFilters({
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);
+    params.delete("pagina");
     router.push(`/documentacoes?${params.toString()}`);
   }
 

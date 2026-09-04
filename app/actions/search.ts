@@ -4,8 +4,8 @@ import { searchDocumentations } from "@/lib/data";
 
 export async function searchAction(query: string) {
   if (!query.trim()) return [];
-  const results = await searchDocumentations({ query });
-  return results.slice(0, 8).map((d) => ({
+  const { docs } = await searchDocumentations({ query, pageSize: 8 });
+  return docs.map((d) => ({
     id: d.id,
     title: d.title,
     category: d.category?.name ?? null,

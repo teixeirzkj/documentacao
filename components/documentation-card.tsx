@@ -1,22 +1,17 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, Calendar, User } from "lucide-react";
 import { classificationLabel, classificationStyle, formatDate } from "@/lib/utils";
 import type { Documentation } from "@/lib/types";
 
 export function DocumentationCard({ doc, index = 0 }: { doc: Documentation; index?: number }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: Math.min(index, 6) * 0.04 }}
-      whileHover={{ y: -2 }}
+    <div
+      className="animate-fade-in-up"
+      style={{ animationDelay: `${Math.min(index, 6) * 40}ms` }}
     >
       <Link
         href={`/documentacoes/${doc.id}`}
-        className="group flex h-full flex-col rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 shadow-sm shadow-black/[0.03] transition-shadow hover:shadow-md hover:shadow-black/[0.06]"
+        className="group flex h-full flex-col rounded-2xl border border-(--color-border) bg-(--color-surface) p-5 shadow-sm shadow-black/[0.03] transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-black/[0.06]"
       >
         <div className="mb-2 flex items-start justify-between gap-2">
           <h3 className="text-sm font-semibold text-(--color-text) group-hover:text-(--color-primary)">
@@ -64,6 +59,6 @@ export function DocumentationCard({ doc, index = 0 }: { doc: Documentation; inde
           </span>
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }

@@ -14,6 +14,7 @@ export function SearchInput({ placeholder }: { placeholder: string }) {
     const params = new URLSearchParams(searchParams.toString());
     if (value.trim()) params.set("q", value.trim());
     else params.delete("q");
+    params.delete("pagina");
     router.push(`/documentacoes?${params.toString()}`);
   }
 
